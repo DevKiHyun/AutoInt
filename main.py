@@ -32,6 +32,7 @@ def nn_layer(inputs, inputs_size, n_hidden, add_bias=True, name=None, activation
 
 
 if __name__ == '__main__':
+    config = None
     feature_size=None
     num_embedding=None
     embedding_dim=None
@@ -51,6 +52,9 @@ if __name__ == '__main__':
 
 
     """ Tensorflow """
+    Y = tf.placeholder(tf.int8, shape=[None, n_class], name="label")
+
+    # Layer for image feature vector
     img_feature_vector = tf.placeholder(tf.float32, shape=[None, cnn_model_n_channel], name="img_feature_vector")
     img_output_layer = nn_layer(img_feature_vector, inputs_size=cnn_model_n_channel, n_hidden=output_dim, activation=tf.nn.relu, name="img_output_layer")
 
@@ -66,8 +70,20 @@ if __name__ == '__main__':
 
     # classifier
     classifier_weight = tf.Variable(he_initializer()(shape=[output_dim, n_class]), name='classifier_weights')
-    classifier_bias = tf.Variable(tf.zeros([n_class]), name='classifier_bias',)
+    classifier_bias = tf.Variable(tf.zeros([n_class]), name='classifier_bias')
     classifier_layer = tf.matmul(output, classifier_weight) + classifier_bias
 
     # probability
     softmax_layer = tf.nn.softmax(classifier_layer)
+
+
+    # Loss
+    learning_rate = config.learning_rate
+    beta_1 = config.beta_1
+    beta_2 = config.beta_2
+    epsilon = config.epsilon
+
+    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=classifier_layer, labels=Y))
+    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate,
+                                       beta1=beta_1, beta2=beta_2,
+                                       epsilon=epsilon).minimize(cost)
