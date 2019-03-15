@@ -37,7 +37,7 @@ class InteractingLayer:
         hidden_layer = tf.matmul(inputs, layer_weights)
 
         if add_bias == True:
-            layer_bias = tf.Variable(tf.zeros([n_hidden]), name=name, trainable=True)
+            layer_bias = tf.Variable(tf.zeros([n_hidden]), name=name+'bias', trainable=True)
             hidden_layer = tf.add(hidden_layer, layer_bias)
 
         if activation != None:
