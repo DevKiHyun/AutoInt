@@ -60,10 +60,12 @@ if __name__ == '__main__':
 
 
     # To extract feature of context data(text, tabular), use AutoInt
-    autoInt_layer = AutoInt(feature_size=feature_size,
+    autoInt = AutoInt(feature_size=feature_size,
                             num_embedding=num_embedding,
                             embedding_dim=embedding_dim,
-                            output_dim=output_dim).output
+                            output_dim=output_dim)
+
+    autoInt_layer = autoInt.output
 
     # multiply attention(autoInt) to img_output_layer
     output = tf.mutiply(img_output_layer, autoInt_layer)
