@@ -24,24 +24,25 @@ class AutoInt:
              arXiv preprint arXiv:1810.11921, 2018.](https://arxiv.org/abs/1810.11921)
         """
 
-    def __init__(self, inputs, feature_size, num_embeddings, embedding_dim, output_dim,
+    def __init__(self, feature_size, num_embeddings, embedding_dim, output_dim,
                  att_layer_num=3, att_embedding_size=8, att_head_num=2,
                  att_use_res=True, att_dropout_p=1.):
 
         self.feature_size = feature_size  # 'n' size
-        self.feat_index = tf.placeholder(tf.int32, shape=[None, None], name="feat_index")  # None * M
-        self.feat_value = tf.placeholder(tf.float32, shape=[None, None], name="feat_value")  # None * M
+        self.feat_index = tf.placeholder(tf.int32, shape=[None, None], name="feat_index")  # batch_size * M
+        self.feat_value = tf.placeholder(tf.float32, shape=[None, None], name="feat_value")  # batch_size * M
         self.att_layer_num = att_layer_num
+        self.output_dim = output_dim
 
         self.embedding_weights = tf.Variable(he_initializer()(shape=[self.feature_size, embedding_dim]), name="feature_embeddings")
-        self.embedding = tf.nn.embedding_lookup(self.embedding_weights, self.feat_index)
+        self.embedding = tf.nn.embedding_lookup(self.embedding_weights, self.feat_index)  # batch_size * M * d
         feat_value = tf.reshape(self.feat_value, shape=[-1, num_embeddings, 1])
-        self.embedding = tf.mutiply(self.embedding, feat_value)
-        self.embedding = tf.nn.dropout(self.embedding, att_dropout_p)
+        self.embedding = tf.mutiply(self.embedding, feat_value)  # batch_size * M * d
+        self.embedding = tf.nn.dropout(self.embedding, att_dropout_p)  # batch_size * M * d
 
         for i in range(self.att_layer_num):
             if i == 0:
-                inputs = inputs
+                inputs = self.embedding
                 input_dim = embedding_dim
             else:
                 inputs = interact_layer
@@ -55,9 +56,9 @@ class AutoInt:
                                               dropout_p=att_dropout_p,
                                               name='interacting_layer_{}'.format(i+1)).layer
 
-        self.flat = tf.reshape(interact_layer, shape=[-1, att_embedding_size * att_head_num])
+        self.flatten = tf.reshape(interact_layer, shape=[-1, att_embedding_size * att_head_num])
 
         # Make output layer to attention
-        output_weights = tf.Variable(he_initializer()(shape=[att_embedding_size * att_head_num, output_dim]), name="feature_embeddings")
-        self.output = tf.matmul(self.flat, output_weights)
+        output_weights = tf.Variable(he_initializer()(shape=[att_embedding_size * att_head_num, self.output_dim]), name="feature_embeddings")
+        self.output = tf.matmul(self.flatten, output_weights)
         self.output = tf.nn.sigmoid(self.output)
